@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>NEON FREEZE SLOT</title>
+<style>
+:root{
+  --bg:#07080c; --panel:#111522; --panel2:#181e2d; --text:#f7f8fb; --muted:#9aa4b5;
+  --gold:#ffd24a; --pink:#ff3f9b; --cyan:#2de2e6; --red:#ff4040; --green:#71e68d;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#05060a;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{min-height:100vh;display:flex;justify-content:center;overflow-x:hidden}
+.app{width:min(100vw,620px);min-height:100vh;padding:10px 10px 28px;background:radial-gradient(circle at top,#171c2b 0,#090b11 45%,#05060a 100%)}
+.header{text-align:center;padding:4px 0 8px}
+.header h1{font-size:clamp(24px,7vw,38px);margin:4px 0 0;letter-spacing:.08em;text-shadow:0 0 18px #ff3f9b99}
+.header .sub{font-size:12px;color:var(--muted)}
+
+.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.hud div{background:#111522;border:1px solid #283146;border-radius:12px;padding:7px;text-align:center}
+.hud small{display:block;color:#96a0b0;font-size:10px}
+.hud b{font-size:15px}
+
+.machine{
+  border:3px solid #343c53;border-radius:22px;padding:12px;background:linear-gradient(180deg,#131828,#0c101a);
+  box-shadow:0 0 30px #2de2e622, inset 0 0 30px #0008; position:relative; overflow:hidden
+}
+.marquee{
+  text-align:center;font-weight:900;letter-spacing:.12em;font-size:18px;padding:7px;border-radius:10px;margin-bottom:10px;
+  background:linear-gradient(90deg,#25122c,#282313,#0b2d31);box-shadow:0 0 16px #ff3f9b44
+}
+
+.reel-window{
+  background:#050608;border-radius:18px;padding:10px;border:5px solid #8a8f9c;
+  box-shadow:inset 0 0 20px #000,0 0 18px #fff2;
+}
+.grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:7px;
+}
+.cell{
+  height:clamp(74px,23vw,118px);
+  background:linear-gradient(#fff,#ececf0);
+  color:#111;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:clamp(30px,10vw,54px);font-weight:900;border:2px solid #c7c7cb;
+  box-shadow:inset 0 0 14px #0002;
+}
+.cell.flash{animation:winflash .24s alternate 6}
+@keyframes winflash{from{filter:brightness(1)}to{filter:brightness(1.7);box-shadow:0 0 28px var(--gold)}}
+
+.message{
+  min-height:64px;margin-top:10px;border-radius:13px;background:#151a27;border:1px solid #2c354b;
+  display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;font-weight:800;line-height:1.35
+}
+.controls{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+button{
+  border:0;border-radius:16px;padding:18px 14px;font-size:20px;font-weight:900;color:#111;
+  background:linear-gradient(180deg,#ffe16e,#ffb900);box-shadow:0 7px 0 #9b7000,0 0 24px #ffd24a44;
+  touch-action:manipulation
+}
+button:active{transform:translateY(5px);box-shadow:0 2px 0 #9b7000}
+button:disabled{opacity:.45;transform:none}
+.secondary{font-size:14px;padding:12px;background:#252d40;color:white;box-shadow:none}
+
+.legend{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.legend div{font-size:11px;text-align:center;background:#101522;border-radius:9px;padding:7px 3px;color:#c4cada}
+
+.freeze{
+  position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;flex-direction:column;
+  background:
+    radial-gradient(circle,#fff 0 2%,transparent 3%),
+    repeating-conic-gradient(from 0deg,#ffea00 0 8deg,#ff2d95 8deg 16deg,#00efff 16deg 24deg,#6b2cff 24deg 32deg);
+  animation:freezeBG .15s linear infinite;overflow:hidden;
+}
+.freeze.show{display:flex}
+@keyframes freezeBG{to{filter:hue-rotate(360deg)}}
+.freeze:before{
+  content:"";position:absolute;inset:-50%;background:repeating-linear-gradient(45deg,transparent 0 22px,#fff7 23px 27px,transparent 28px 46px);
+  animation:spinbg 1s linear infinite
+}
+@keyframes spinbg{to{transform:rotate(360deg)}}
+.freeze .inner{
+  z-index:2;text-align:center;background:#090909dd;border:5px solid white;border-radius:24px;padding:24px 18px;width:min(88vw,520px);
+  box-shadow:0 0 50px white,0 0 100px #ff0
+}
+.freeze .mega{font-size:clamp(34px,11vw,70px);font-weight:1000;color:#fff;text-shadow:0 0 10px #fff,0 0 30px #ff0,0 0 50px #f0f}
+.freeze .subf{font-size:18px;font-weight:900;margin-top:8px;color:#ffe95c}
+.freeze .seven{font-size:70px;margin:14px 0;animation:pulse .35s ease-in-out infinite alternate}
+@keyframes pulse{to{transform:scale(1.18)}}
+
+.panel{margin-top:10px;background:#101522;border:1px solid #293246;border-radius:14px;padding:10px}
+.history{max-height:140px;overflow:auto;font-size:12px;color:#c8cfdb;line-height:1.6}
+.note{font-size:11px;color:#8e98aa;line-height:1.5;margin-top:8px}
+.win{color:var(--gold)} .hot{color:#ff6aa9} .good{color:var(--green)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>NEON FREEZE SLOT</h1>
+    <div class="sub">1ボタンで次ゲームへ進む・タイミング操作なし</div>
+  </div>
+
+  <div class="hud">
+    <div><small>持ち枚</small><b id="coins">1000</b></div>
+    <div><small>G数</small><b id="games">0</b></div>
+    <div><small>BIG</small><b id="big">0</b></div>
+    <div><small>REG</small><b id="reg">0</b></div>
+  </div>
+
+  <div class="machine">
+    <div class="marquee" id="marquee">★★★ CHANCE ZONE ★★★</div>
+
+    <div class="reel-window">
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div class="message" id="message">STARTを押してください</div>
+
+    <div class="controls">
+      <button id="startBtn">🎰 START / 次ゲーム</button>
+      <button class="secondary" id="resetBtn">新しい台に座る</button>
+    </div>
+
+    <div class="legend">
+      <div>🔔 ベル</div><div>🍒 チェリー</div><div>BAR REG</div><div>7 BIG</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <b>履歴</b>
+    <div class="history" id="history">まだ回していません。</div>
+    <div class="note">3枚BET。押すタイミングによる有利不利はありません。フリーズはごく低確率で発生します。</div>
+  </div>
+</div>
+
+<div class="freeze" id="freeze">
+  <div class="inner">
+    <div class="mega">PREMIUM FREEZE</div>
+    <div class="seven">⚡7️⃣7️⃣7️⃣⚡</div>
+    <div class="subf">超激アツ・プレミアム演出</div>
+  </div>
+</div>
+
+<script>
+const S = ["7","BAR","🔔","🍒","★","💎","○"];
+const grid = document.getElementById("grid");
+for(let i=0;i<9;i++){
+  const d=document.createElement("div"); d.className="cell"; d.textContent=S[(i+2)%S.length]; grid.appendChild(d);
+}
+const cells=[...grid.children];
+const el=id=>document.getElementById(id);
+let coins=1000,games=0,big=0,reg=0,busy=false,log=[];
+
+// approximate probabilities for this fictional machine
+const P={
+  freeze:1/4096,
+  big:1/260,
+  reg:1/360,
+  bell:1/7.2,
+  cherry:1/32,
+  diamond:1/90
+};
+
+function randSym(){ return S[Math.floor(Math.random()*S.length)] }
+function setRandomGrid(){
+  cells.forEach(c=>{c.classList.remove("flash"); c.textContent=randSym()});
+}
+function winningLine(sym){
+  // center row = indices 3,4,5
+  cells.forEach(c=>c.textContent=randSym());
+  [3,4,5].forEach(i=>cells[i].textContent=sym);
+  [3,4,5].forEach(i=>cells[i].classList.add("flash"));
+}
+function update(){
+  el("coins").textContent=coins; el("games").textContent=games; el("big").textContent=big; el("reg").textContent=reg;
+  el("history").innerHTML=log.length?log.slice().reverse().map(x=>`<div>${x}</div>`).join(""):"まだ回していません。";
+}
+function addLog(t){log.push(`G${games}：${t}`); if(log.length>80)log.shift()}
+
+function resolve(){
+  const r=Math.random();
+  let cut=0,type="ハズレ",pay=0,sym=null;
+  cut+=P.big;
+  if(r<cut){type="BIG BONUS";pay=240;sym="7";big++}
+  else if(r<(cut+=P.reg)){type="REG BONUS";pay=96;sym="BAR";reg++}
+  else if(r<(cut+=P.bell)){type="ベル";pay=8;sym="🔔"}
+  else if(r<(cut+=P.cherry)){type="チェリー";pay=2;sym="🍒"}
+  else if(r<(cut+=P.diamond)){type="ダイヤ";pay=5;sym="💎"}
+
+  if(sym) winningLine(sym); else setRandomGrid();
+  coins += pay;
+
+  if(type==="ハズレ"){
+    el("message").textContent="ハズレ";
+    addLog("ハズレ");
+  }else{
+    el("message").innerHTML=`<span class="${type.includes("BONUS")?"win":"good"}">${type}　+${pay}枚</span>`;
+    addLog(`${type} +${pay}枚`);
+  }
+  update();
+}
+
+function triggerFreeze(){
+  el("freeze").classList.add("show");
+  el("message").innerHTML='<span class="hot">……フリーズ……</span>';
+  setTimeout(()=>{
+    el("freeze").classList.remove("show");
+    winningLine("7");
+    const pay=500; coins+=pay; big++;
+    el("message").innerHTML=`<span class="win">PREMIUM BIG!! +${pay}枚</span>`;
+    addLog(`🔥 PREMIUM FREEZE +${pay}枚`);
+    busy=false; el("startBtn").disabled=false; update();
+  },2600);
+}
+
+function play(){
+  if(busy || coins<3)return;
+  busy=true; el("startBtn").disabled=true;
+  coins-=3; games++; update();
+  el("message").textContent="抽選中…";
+  let n=0;
+  const timer=setInterval(()=>{setRandomGrid();n++; if(n>=7){
+    clearInterval(timer);
+    if(Math.random()<P.freeze){triggerFreeze();return;}
+    resolve();
+    busy=false; el("startBtn").disabled=false;
+  }},55);
+}
+
+function reset(){
+  coins=1000;games=0;big=0;reg=0;log=[];busy=false;
+  setRandomGrid();el("message").textContent="STARTを押してください";
+  el("startBtn").disabled=false;update();
+}
+el("startBtn").onclick=play;
+el("resetBtn").onclick=reset;
+reset();
+</script>
+</body>
+</html>
