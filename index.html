@@ -45,12 +45,17 @@ body{min-height:100vh;background:
 .reel{position:relative;overflow:hidden;background:linear-gradient(90deg,#e9e9e5,#fff 25%,#f2f2ee 65%,#d8d8d4);border-right:1px solid #aaa}
 .strip{position:absolute;left:0;right:0;top:0;will-change:transform}
 .symbol{height:90px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #c7c7c3}
-.payline{position:absolute;left:0;right:0;top:50%;height:2px;background:#ff303e;box-shadow:0 0 8px #ff1734;z-index:7}
+.payline{display:none;position:absolute;left:0;right:0;top:50%;height:2px;background:#ff303e;box-shadow:0 0 8px #ff1734;z-index:7}
 .payline:before,.payline:after{content:"";position:absolute;top:-7px;border-top:8px solid transparent;border-bottom:8px solid transparent}
 .payline:before{left:0;border-left:12px solid #ff3043} .payline:after{right:0;border-right:12px solid #ff3043}
+
+.paylines{position:absolute;inset:0;width:100%;height:100%;z-index:7;pointer-events:none}
+.paylines .pl{stroke:#34bdf0;stroke-width:1.5;opacity:.16;vector-effect:non-scaling-stroke}
+.paylines .pl-center{stroke:#ff3043;stroke-width:2.6;opacity:.92;filter:drop-shadow(0 0 4px #ff3043)}
+
 .shade{position:absolute;inset:0;z-index:5;pointer-events:none;box-shadow:inset 0 60px 40px -25px #0007,inset 0 -60px 40px -25px #0007}
 
-.tile{width:79%;height:63%;display:flex;align-items:center;justify-content:center;border-radius:9px;line-height:1;font-weight:1000;
+.tile{width:82%;height:84%;display:flex;align-items:center;justify-content:center;border-radius:9px;line-height:1;font-weight:1000;
  box-shadow:inset 0 0 0 3px #1112,0 2px 3px #0004}
 .seven-red,.seven-blue{font:italic 900 52px/1 Impact,Haettenschweiler,"Arial Black",sans-serif;transform:skew(-10deg);background:#fff}
 .seven-red{color:#ef2e31;text-shadow:2px 2px 0 #ffc123,-2px -1px #fff,0 0 4px #ff2020}
@@ -133,7 +138,13 @@ th,td{padding:6px 4px;text-align:center;border-bottom:1px solid #14334a;white-sp
 
    <div class="screen">
     <div class="reel-window">
-     <div class="payline"></div>
+     <svg class="paylines" viewBox="0 0 300 300" preserveAspectRatio="none" aria-hidden="true">
+        <line class="pl pl-center" x1="0" y1="150" x2="300" y2="150"/>
+        <line class="pl" x1="0" y1="50" x2="300" y2="50"/>
+        <line class="pl" x1="0" y1="250" x2="300" y2="250"/>
+        <line class="pl" x1="0" y1="50" x2="300" y2="250"/>
+        <line class="pl" x1="0" y1="250" x2="300" y2="50"/>
+      </svg>
      <div class="reels">
       <div class="reel"><div class="strip" id="r0"></div></div>
       <div class="reel"><div class="strip" id="r1"></div></div>
@@ -173,7 +184,20 @@ th,td{padding:6px 4px;text-align:center;border-bottom:1px solid #14334a;white-sp
   </div>
  </div>
 
- <div class="panel">
+ 
+<div class="panel">
+  <h2>成立ライン（5ライン）</h2>
+  <div class="tiny">中段を約68%で優先。上段・下段・斜め右下がり・斜め右上がりも成立します。</div>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:8px;font-size:9px;text-align:center">
+    <div class="reach-chip">━<br>中段</div>
+    <div class="reach-chip">￣<br>上段</div>
+    <div class="reach-chip">＿<br>下段</div>
+    <div class="reach-chip">＼<br>右下がり</div>
+    <div class="reach-chip">／<br>右上がり</div>
+  </div>
+</div>
+
+<div class="panel">
   <h2>設定を回答</h2>
   <div class="guess-grid" id="guessGrid"></div>
   <div class="guess-history" id="guessHistory">まだ回答していません。</div>
@@ -211,14 +235,25 @@ th,td{padding:6px 4px;text-align:center;border-bottom:1px solid #14334a;white-sp
 <script>
 
 const S={R7:'R7',B7:'B7',BAR:'BAR',BELL:'BELL',REP:'REP',CH:'CH',MEL:'MEL'};
-// 固定21コマ。配列順がそのまま一本のリールの並び。
+
+// 固定21コマの3リール
 const REELS=[
  [S.R7,S.REP,S.MEL,S.REP,S.BELL,S.REP,S.R7,S.CH,S.BELL,S.REP,S.CH,S.BAR,S.BELL,S.REP,S.MEL,S.REP,S.BELL,S.B7,S.CH,S.REP,S.BELL],
  [S.MEL,S.REP,S.MEL,S.BELL,S.B7,S.R7,S.CH,S.BELL,S.REP,S.MEL,S.BELL,S.BELL,S.MEL,S.CH,S.REP,S.BELL,S.BAR,S.BAR,S.BAR,S.REP,S.BELL],
  [S.BELL,S.REP,S.MEL,S.MEL,S.BELL,S.CH,S.R7,S.REP,S.BELL,S.MEL,S.MEL,S.BELL,S.BELL,S.REP,S.CH,S.BAR,S.MEL,S.B7,S.REP,S.CH,S.BELL]
 ];
-const PROBS={1:{big:1/273.1,r:1/439.8},2:{big:1/270.8,r:1/399.6},3:{big:1/266.4,r:1/331.0},4:{big:1/254.0,r:1/315.1},5:{big:1/240.1,r:1/255.0},6:{big:1/229.1,r:1/229.1}};
+
+const PROBS={
+ 1:{big:1/273.1,r:1/439.8},
+ 2:{big:1/270.8,r:1/399.6},
+ 3:{big:1/266.4,r:1/331.0},
+ 4:{big:1/254.0,r:1/315.1},
+ 5:{big:1/240.1,r:1/255.0},
+ 6:{big:1/229.1,r:1/229.1}
+};
 Object.values(PROBS).forEach(p=>{p.a=p.big/2;p.b=p.big/2});
+
+// リーチ目
 const REACH=[
  [S.BAR,S.R7,S.BAR],
  [S.R7,S.BAR,S.R7],
@@ -227,7 +262,22 @@ const REACH=[
  [S.R7,S.B7,S.BAR],
  [S.B7,S.R7,S.BAR]
 ];
-const strips=[0,1,2].map(i=>document.getElementById('r'+i)); const el=id=>document.getElementById(id); let state={}; let busy=false; let audioCtx=null;
+
+// row: 0=上段, 1=中段, 2=下段
+const PAYLINES=[
+ {id:'C',name:'中段',rows:[1,1,1],weight:.68},
+ {id:'U',name:'上段',rows:[0,0,0],weight:.08},
+ {id:'L',name:'下段',rows:[2,2,2],weight:.08},
+ {id:'D',name:'斜め右下がり',rows:[0,1,2],weight:.08},
+ {id:'A',name:'斜め右上がり',rows:[2,1,0],weight:.08}
+];
+
+const strips=[0,1,2].map(i=>document.getElementById('r'+i));
+const el=id=>document.getElementById(id);
+let state={};
+let busy=false;
+let audioCtx=null;
+
 function symHTML(s){
  if(s===S.R7)return '<div class="tile seven-red">7</div>';
  if(s===S.B7)return '<div class="tile seven-blue">7</div>';
@@ -237,94 +287,399 @@ function symHTML(s){
  if(s===S.CH)return '<div class="tile cherry-tile">🍒</div>';
  return '<div class="tile melon-tile">🍉</div>';
 }
-function symName(s){return {[S.R7]:'赤7',[S.B7]:'青7',[S.BAR]:'BAR',[S.BELL]:'ベル',[S.REP]:'REPLAY',[S.CH]:'チェリー',[S.MEL]:'スイカ'}[s]}
-function buildStrips(){REELS.forEach((arr,ri)=>{const trip=[...arr,...arr,...arr];strips[ri].innerHTML=trip.map(s=>`<div class="symbol">${symHTML(s)}</div>`).join('')})}
-function buildReelTable(){let html='';for(let row=0;row<21;row++){html+=`<tr><td class="num">${21-row}</td>${[0,1,2].map(c=>`<td class="mini-sym">${symHTML(REELS[c][row])}</td>`).join('')}</tr>`}el('reelBody').innerHTML=html}
-function buildReachList(){el('reachList').innerHTML=REACH.map(x=>`<span class="reach-chip">${x.map(symName).join(' - ')}</span>`).join('')}
-function rate(n,g){return n?`1/${Math.round(g/n)}`:'-'}; function combined(...ps){return 1/ps.reduce((a,x)=>a+x,0)}
-function initProbTable(){el('probBody').innerHTML=Object.entries(PROBS).map(([s,p])=>`<tr><td>${s}</td><td>1/${Math.round(1/p.a)}</td><td>1/${Math.round(1/p.b)}</td><td>1/${Math.round(combined(p.a,p.b))}</td><td>1/${Math.round(1/p.r)}</td><td>1/${Math.round(combined(p.a,p.b,p.r))}</td></tr>`).join('')}
-function newMachine(){state={setting:1+Math.floor(Math.random()*6),games:0,a:0,b:0,r:0,payout:0,pendingBonus:null,guesses:[],positions:[0,0,0],startedAt:Date.now()};busy=false;el('message').textContent='STARTで1ゲーム';el('startBtn').disabled=false;update();resetReelVisuals()}
-function resetReelVisuals(){REELS.forEach((arr,i)=>{state.positions[i]=Math.floor(Math.random()*arr.length);setReel(i,state.positions[i],false)})}
-function reelH(){return window.innerWidth<=430?90:100}
-function setReel(i,pos,animate=true){const h=reelH(),base=REELS[i].length,targetIndex=base+pos-1,y=-(targetIndex*h);strips[i].style.transition=animate?`transform ${0.85+i*0.28}s cubic-bezier(.12,.75,.18,1)`:'none';strips[i].style.transform=`translateY(${y}px)`}
-function idxOf(reel,sym,nth=0){const hits=[];REELS[reel].forEach((s,i)=>{if(s===sym)hits.push(i)});return hits[Math.min(nth,hits.length-1)]}
-function stopsForTriple(t){return t.map((s,i)=>idxOf(i,s,0))}
-function lineSymbols(stops){return stops.map((p,i)=>REELS[i][p])}
-function isReach(line){return REACH.some(p=>p.every((s,i)=>s===line[i]))}
-function isTriple(line,s){return line[0]===s&&line[1]===s&&line[2]===s}
-function pickOutcome(){if(state.pendingBonus)return state.pendingBonus;const p=PROBS[state.setting],r=Math.random();if(r<p.a)return'A';if(r<p.a+p.b)return'B';if(r<p.a+p.b+p.r)return'R';const q=Math.random();if(q<1/7.2)return'BEL';if(q<1/7.2+1/7.3)return'REP';if(q<1/7.2+1/7.3+1/32)return'CH';if(q<1/7.2+1/7.3+1/32+1/90)return'MEL';return'N'}
-function stopForOutcome(type){
- if(state.pendingBonus){
-   if(type==='A')return stopsForTriple([S.R7,S.R7,S.R7]);
-   if(type==='B')return stopsForTriple([S.B7,S.B7,S.B7]);
-   return stopsForTriple([S.BAR,S.BAR,S.BAR]);
- }
- if(type==='A'||type==='B'||type==='R')return stopsForTriple(REACH[Math.floor(Math.random()*REACH.length)]);
- if(type==='BEL')return stopsForTriple([S.BELL,S.BELL,S.BELL]);
- if(type==='REP')return stopsForTriple([S.REP,S.REP,S.REP]);
- if(type==='MEL')return stopsForTriple([S.MEL,S.MEL,S.MEL]);
- if(type==='CH'){const left=idxOf(0,S.CH,Math.floor(Math.random()*3));return [left,Math.floor(Math.random()*21),Math.floor(Math.random()*21)]}
- let st;do{st=REELS.map(a=>Math.floor(Math.random()*a.length))}while(classifyLine(st).kind!=='MISS');return st;
+function symName(s){
+ return {[S.R7]:'赤7',[S.B7]:'青7',[S.BAR]:'BAR',[S.BELL]:'ベル',[S.REP]:'REPLAY',[S.CH]:'チェリー',[S.MEL]:'スイカ'}[s];
 }
-function classifyLine(stops){const line=lineSymbols(stops);if(isTriple(line,S.R7))return{kind:'A',label:'RED BIG'};if(isTriple(line,S.B7))return{kind:'B',label:'BLUE BIG'};if(isTriple(line,S.BAR))return{kind:'R',label:'REG'};if(isReach(line))return{kind:'REACH',label:'リーチ目'};if(isTriple(line,S.BELL))return{kind:'BELL',label:'ベル揃い'};if(isTriple(line,S.REP))return{kind:'REP',label:'REPLAY'};if(isTriple(line,S.MEL))return{kind:'MEL',label:'スイカ揃い'};if(line[0]===S.CH)return{kind:'CH',label:'チェリー'};return{kind:'MISS',label:'ハズレ'}}
+
+function buildStrips(){
+ REELS.forEach((arr,ri)=>{
+   const trip=[...arr,...arr,...arr];
+   strips[ri].innerHTML=trip.map(s=>`<div class="symbol">${symHTML(s)}</div>`).join('');
+ });
+}
+function buildReelTable(){
+ let out='';
+ for(let row=0;row<21;row++){
+   out+=`<tr><td class="num">${21-row}</td>${[0,1,2].map(c=>`<td class="mini-sym">${symHTML(REELS[c][row])}</td>`).join('')}</tr>`;
+ }
+ el('reelBody').innerHTML=out;
+}
+function buildReachList(){
+ el('reachList').innerHTML=REACH.map(x=>`<span class="reach-chip">${x.map(symName).join(' - ')}</span>`).join('');
+}
+function rate(n,g){return n?`1/${Math.round(g/n)}`:'-'}
+function combined(...ps){return 1/ps.reduce((a,x)=>a+x,0)}
+function initProbTable(){
+ el('probBody').innerHTML=Object.entries(PROBS).map(([s,p])=>
+   `<tr><td>${s}</td><td>1/${Math.round(1/p.a)}</td><td>1/${Math.round(1/p.b)}</td><td>1/${Math.round(combined(p.a,p.b))}</td><td>1/${Math.round(1/p.r)}</td><td>1/${Math.round(combined(p.a,p.b,p.r))}</td></tr>`
+ ).join('');
+}
+
+function newMachine(){
+ state={
+   setting:1+Math.floor(Math.random()*6),
+   games:0,a:0,b:0,r:0,
+   payout:0,coins:0,
+   credit:1000,lastWin:0,
+   pendingBonus:null,
+   replayFree:false,
+   guesses:[],
+   positions:[0,0,0],
+   startedAt:Date.now()
+ };
+ busy=false;
+ el('message').textContent='STARTで1ゲーム';
+ el('startBtn').disabled=false;
+ el('startBtn').innerHTML='MAX<br>BET';
+ update();
+ resetReelVisuals();
+}
+
+function resetReelVisuals(){
+ REELS.forEach((arr,i)=>{
+   state.positions[i]=Math.floor(Math.random()*arr.length);
+   setReel(i,state.positions[i],false);
+ });
+}
+
+// CSSの実寸に合わせる
+function reelH(){
+ const first=document.querySelector('.symbol');
+ return first ? first.getBoundingClientRect().height : (window.innerWidth<=460?84:90);
+}
+
+// pos = 中段に表示する配列index
+function setReel(i,pos,animate=true){
+ const h=reelH(), base=REELS[i].length;
+ const targetIndex=base+pos-1;
+ const y=-(targetIndex*h);
+ strips[i].style.transition=animate?`transform ${0.85+i*0.28}s cubic-bezier(.12,.75,.18,1)`:'none';
+ strips[i].style.transform=`translateY(${y}px)`;
+}
+
+function indicesOf(reel,sym){
+ const hits=[];
+ REELS[reel].forEach((s,i)=>{if(s===sym)hits.push(i)});
+ return hits;
+}
+function randomIndexOf(reel,sym){
+ const hits=indicesOf(reel,sym);
+ return hits[Math.floor(Math.random()*hits.length)];
+}
+function mod(n,m){return ((n%m)+m)%m}
+
+function choosePayline(){
+ const r=Math.random();
+ let sum=0;
+ for(const line of PAYLINES){
+   sum+=line.weight;
+   if(r<sum)return line;
+ }
+ return PAYLINES[0];
+}
+
+// 指定ラインに指定図柄を置くため、中段停止位置へ変換する
+function stopsForPattern(pattern,line=choosePayline()){
+ return pattern.map((sym,reel)=>{
+   const target=randomIndexOf(reel,sym);
+   const row=line.rows[reel];
+   return mod(target + 1 - row, REELS[reel].length);
+ });
+}
+
+function visibleSymbol(stop,reel,row){
+ // 上段 = center-1 / 中段=center / 下段=center+1
+ return REELS[reel][mod(stop + row - 1, REELS[reel].length)];
+}
+function symbolsOnLine(stops,line){
+ return [0,1,2].map(reel=>visibleSymbol(stops[reel],reel,line.rows[reel]));
+}
+function isReachSymbols(syms){
+ return REACH.some(p=>p.every((s,i)=>s===syms[i]));
+}
+function isTriple(syms,s){
+ return syms.every(x=>x===s);
+}
+
+// 5ライン全体を判定。ボーナス/リーチ目を優先して拾う。
+function classifyGrid(stops){
+ const viewed=PAYLINES.map(line=>({line,syms:symbolsOnLine(stops,line)}));
+
+ for(const x of viewed){
+   if(isTriple(x.syms,S.R7))return{kind:'A',label:'RED BIG',line:x.line};
+   if(isTriple(x.syms,S.B7))return{kind:'B',label:'BLUE BIG',line:x.line};
+   if(isTriple(x.syms,S.BAR))return{kind:'R',label:'REG',line:x.line};
+ }
+ for(const x of viewed){
+   if(isReachSymbols(x.syms))return{kind:'REACH',label:'リーチ目',line:x.line};
+ }
+ for(const x of viewed){
+   if(isTriple(x.syms,S.BELL))return{kind:'BELL',label:'ベル揃い',line:x.line};
+   if(isTriple(x.syms,S.REP))return{kind:'REP',label:'REPLAY',line:x.line};
+   if(isTriple(x.syms,S.MEL))return{kind:'MEL',label:'スイカ揃い',line:x.line};
+ }
+ // チェリーは有効ライン上の左リールに停止で成立
+ for(const x of viewed){
+   if(x.syms[0]===S.CH)return{kind:'CH',label:'チェリー',line:x.line};
+ }
+ return{kind:'MISS',label:'ハズレ',line:null};
+}
+
+function pickOutcome(){
+ if(state.pendingBonus)return state.pendingBonus;
+ const p=PROBS[state.setting],r=Math.random();
+ if(r<p.a)return'A';
+ if(r<p.a+p.b)return'B';
+ if(r<p.a+p.b+p.r)return'R';
+ const q=Math.random();
+ if(q<1/7.2)return'BEL';
+ if(q<1/7.2+1/7.3)return'REP';
+ if(q<1/7.2+1/7.3+1/32)return'CH';
+ if(q<1/7.2+1/7.3+1/32+1/90)return'MEL';
+ return'N';
+}
+
+function stopForOutcome(type){
+ // すでにボーナス成立済みなら、次ゲームに図柄を5ラインのどこかへ揃える。
+ if(state.pendingBonus){
+   const line=choosePayline();
+   if(type==='A')return stopsForPattern([S.R7,S.R7,S.R7],line);
+   if(type==='B')return stopsForPattern([S.B7,S.B7,S.B7],line);
+   return stopsForPattern([S.BAR,S.BAR,S.BAR],line);
+ }
+
+ // ボーナス成立ゲームはリーチ目だけ出し、種類を隠す。
+ if(type==='A'||type==='B'||type==='R'){
+   return stopsForPattern(REACH[Math.floor(Math.random()*REACH.length)],choosePayline());
+ }
+ if(type==='BEL')return stopsForPattern([S.BELL,S.BELL,S.BELL],choosePayline());
+ if(type==='REP')return stopsForPattern([S.REP,S.REP,S.REP],choosePayline());
+ if(type==='MEL')return stopsForPattern([S.MEL,S.MEL,S.MEL],choosePayline());
+ if(type==='CH'){
+   const line=choosePayline();
+   const st=[Math.floor(Math.random()*21),Math.floor(Math.random()*21),Math.floor(Math.random()*21)];
+   const target=randomIndexOf(0,S.CH);
+   st[0]=mod(target + 1 - line.rows[0],21);
+   return st;
+ }
+
+ // ハズレは5ライン全てで役が成立しない停止形だけを採用。
+ let st,tries=0;
+ do{
+   st=REELS.map(a=>Math.floor(Math.random()*a.length));
+   tries++;
+ }while(classifyGrid(st).kind!=='MISS' && tries<500);
+ return st;
+}
+
+function award(kind){
+ let win=0;
+ if(kind==='A'){state.a++;win=350;beepBonus()}
+ else if(kind==='B'){state.b++;win=350;beepBonus()}
+ else if(kind==='R'){state.r++;win=100;beepReg()}
+ else if(kind==='BELL'){win=8;beepSmall()}
+ else if(kind==='MEL'){win=5;beepSmall()}
+ else if(kind==='CH'){win=5;beepSmall()}
+ else if(kind==='REP'){
+   state.replayFree=true;
+   beepSmall();
+ }
+ if(win>0){
+   state.credit+=win;
+   state.payout+=win;
+ }
+ state.lastWin=win;
+ return win;
+}
+
 function play(){
  if(busy)return;
- busy=true;el('startBtn').disabled=true;state.games++;
+ if(!state.replayFree && state.credit<3){
+   showToast('CREDIT不足','CREDITが3枚未満です。設定看破をリセットして1000枚から再開してください。',false);
+   return;
+ }
+ busy=true;
+ el('startBtn').disabled=true;
+ state.lastWin=0;
+
+ // 1000枚スタート。通常ゲームは3枚BET、REPLAY後のみ次ゲーム無料。
+ if(state.replayFree){
+   state.replayFree=false;
+ }else{
+   state.credit-=3;
+   state.coins+=3;
+ }
+ state.games++;
+
  const resolvingBonus=!!state.pendingBonus;
  const selected=pickOutcome();
  const stops=stopForOutcome(selected);
+
  el('message').textContent='リール回転中…';
- REELS.forEach((arr,i)=>{const h=reelH(),start=Math.max(0,stops[i]-8);strips[i].style.transition='none';strips[i].style.transform=`translateY(${-((arr.length+start-1)*h)}px)`;void strips[i].offsetHeight;setTimeout(()=>setReel(i,stops[i],true),30)});
+ update();
+
+ REELS.forEach((arr,i)=>{
+   const h=reelH();
+   const start=Math.max(0,stops[i]-8);
+   strips[i].style.transition='none';
+   strips[i].style.transform=`translateY(${-((arr.length+start-1)*h)}px)`;
+   void strips[i].offsetHeight;
+   setTimeout(()=>setReel(i,stops[i],true),30);
+ });
+
  setTimeout(()=>{
-   state.positions=stops;const res=classifyLine(stops);
+   state.positions=stops;
+   const res=classifyGrid(stops);
+
    if(resolvingBonus){
-     if(selected==='A'){state.a++;state.payout+=350;el('message').innerHTML='<span class="gold">🔴 RED BIG　+350枚</span>';beepBonus()}
-     else if(selected==='B'){state.b++;state.payout+=350;el('message').innerHTML='<span class="gold">🔵 BLUE BIG　+350枚</span>';beepBonus()}
-     else {state.r++;state.payout+=100;el('message').innerHTML='<span class="good">BAR REG　+100枚</span>';beepReg()}
-     state.pendingBonus=null;el('startBtn').textContent='🎰 START / 次ゲーム';
+     const win=award(selected);
+     state.pendingBonus=null;
+     if(selected==='A')el('message').innerHTML=`<span class="gold">🔴 RED BIG　+${win}枚</span>`;
+     else if(selected==='B')el('message').innerHTML=`<span class="gold">🔵 BLUE BIG　+${win}枚</span>`;
+     else el('message').innerHTML=`<span class="good">BAR REG　+${win}枚</span>`;
+     el('startBtn').innerHTML='MAX<br>BET';
    }else if(selected==='A'||selected==='B'||selected==='R'){
      state.pendingBonus=selected;
+     state.lastWin=0;
      el('message').innerHTML='<span class="gold">✨ リーチ目！ ✨</span>';
-     el('startBtn').textContent='🎰 ボーナスを狙う';
+     el('startBtn').textContent='BONUS';
      beepReach();
-   }else if(res.kind==='BELL'){el('message').innerHTML='<span class="good">🔔 ベル揃い</span>';beepSmall()}
-   else if(res.kind==='REP'){el('message').innerHTML='<span class="good">🔵 REPLAY</span>';beepSmall()}
-   else if(res.kind==='MEL'){el('message').innerHTML='<span class="good">🍉 スイカ揃い</span>';beepSmall()}
-   else if(res.kind==='CH'){el('message').innerHTML='<span class="good">🍒 チェリー</span>';beepSmall()}
-   else{el('message').textContent='ハズレ'}
-   busy=false;el('startBtn').disabled=false;update()
- },1500)
+   }else if(res.kind==='BELL'){
+     const w=award('BELL');
+     el('message').innerHTML=`<span class="good">🔔 ベル揃い（${res.line.name}） +${w}枚</span>`;
+   }else if(res.kind==='REP'){
+     award('REP');
+     el('message').innerHTML=`<span class="good">🔵 REPLAY（${res.line.name}） 次ゲームBET不要</span>`;
+   }else if(res.kind==='MEL'){
+     const w=award('MEL');
+     el('message').innerHTML=`<span class="good">🍉 スイカ揃い（${res.line.name}） +${w}枚</span>`;
+   }else if(res.kind==='CH'){
+     const w=award('CH');
+     el('message').innerHTML=`<span class="good">🍒 チェリー（${res.line.name}） +${w}枚</span>`;
+   }else{
+     state.lastWin=0;
+     el('message').textContent='ハズレ';
+   }
+
+   busy=false;
+   el('startBtn').disabled=false;
+   update();
+ },1500);
 }
-function update(){el('games').textContent=state.games;el('bigA').textContent=state.a;el('bigB').textContent=state.b;el('reg').textContent=state.r;el('coins').textContent=state.games*3;el('payout').textContent=state.payout;el('bigRate').textContent=rate(state.a+state.b,state.games);el('regRate').textContent=rate(state.r,state.games);el('totalRate').textContent=rate(state.a+state.b+state.r,state.games);el('guessCount').textContent=state.guesses.length;el('guessHistory').innerHTML=state.guesses.length?state.guesses.map((g,i)=>`${i+1}回目：設定${g.value} → <span class="${g.correct?'good':'bad'}">${g.correct?'正解':'ハズレ'}</span>`).join('<br>'):'まだ回答していません。'}
-function buildGuessButtons(){el('guessGrid').innerHTML='';for(let s=1;s<=6;s++){const b=document.createElement('button');b.textContent='設定 '+s;b.onclick=()=>guess(s);el('guessGrid').appendChild(b)}}
-function guess(s){if(busy)return;const correct=s===state.setting;state.guesses.push({value:s,correct,time:Date.now()});update();if(correct){fanfare();saveSession();showToast('🎉 設定カンパ成功！',`正解は設定${state.setting}。${state.games}Gで看破しました。<br>RED BIG ${state.a} / BLUE BIG ${state.b} / REG ${state.r}`,true)}else{beepMiss();showToast('❌ ハズレ',`設定${s}ではありません。<br>前回までの回答は残したまま、続けて看破できます。`,false)}}
-function showToast(title,text,correct){el('toastTitle').textContent=title;el('toastText').innerHTML=text;const a=el('toastActions');a.innerHTML='';if(correct){const yes=document.createElement('button');yes.textContent='リセットして新しい台';yes.onclick=()=>{el('toast').classList.remove('show');newMachine()};const no=document.createElement('button');no.textContent='この台を続ける';no.className='no';no.onclick=()=>el('toast').classList.remove('show');a.append(yes,no)}else{const ok=document.createElement('button');ok.textContent='続ける';ok.onclick=()=>el('toast').classList.remove('show');a.append(ok)}el('toast').classList.add('show')}
-function saveSession(){const key='kanpa_history_v4';const h=JSON.parse(localStorage.getItem(key)||'[]');h.unshift({t:Date.now(),s:state.setting,g:state.games,a:state.a,b:state.b,r:state.r,q:state.guesses.length});localStorage.setItem(key,JSON.stringify(h.slice(0,50)));renderHistory()}
-function renderHistory(){const h=JSON.parse(localStorage.getItem('kanpa_history_v4')||'[]');el('histBody').innerHTML=h.length?h.map(x=>`<tr><td>${new Date(x.t).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</td><td>${x.s}</td><td>${x.g}</td><td>${x.a}</td><td>${x.b}</td><td>${x.r}</td><td>${x.q}</td></tr>`).join(''):'<tr><td colspan="7" class="muted">履歴なし</td></tr>'}
-function ac(){if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();return audioCtx}function tone(f,d,v=.05,delay=0){const c=ac(),o=c.createOscillator(),g=c.createGain();o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(c.destination);const t=c.currentTime+delay;o.start(t);o.stop(t+d)}
-function fanfare(){[523,659,784,1047,1319].forEach((f,i)=>tone(f,.18,.08,i*.12))}function beepMiss(){tone(160,.18,.07);tone(120,.28,.06,.15)}function beepReg(){tone(440,.08,.04);tone(660,.10,.04,.09)}function beepBonus(){tone(660,.08,.05);tone(880,.08,.05,.08);tone(1320,.12,.05,.16)}function beepReach(){tone(740,.06,.04);tone(980,.08,.045,.08);tone(1240,.10,.05,.17)}function beepSmall(){tone(520,.06,.03);tone(700,.06,.03,.07)}
-el('startBtn').onclick=play;el('clearHist').onclick=()=>{if(confirm('設定履歴をすべて消しますか？')){localStorage.removeItem('kanpa_history_v4');renderHistory()}};
-buildStrips();buildReelTable();buildReachList();buildGuessButtons();initProbTable();renderHistory();newMachine();
 
+function update(){
+ el('games').textContent=state.games;
+ el('bigA').textContent=state.a;
+ el('bigB').textContent=state.b;
+ el('reg').textContent=state.r;
+ el('coins').textContent=state.coins;
+ el('payout').textContent=state.payout;
+ el('credit').textContent=state.credit;
+ el('lastWin').textContent=state.lastWin;
+ el('bigRate').textContent=rate(state.a+state.b,state.games);
+ el('regRate').textContent=rate(state.r,state.games);
+ el('totalRate').textContent=rate(state.a+state.b+state.r,state.games);
+ el('guessCount').textContent=state.guesses.length;
+ el('guessHistory').innerHTML=state.guesses.length
+   ?state.guesses.map((g,i)=>`${i+1}回目：設定${g.value} → <span class="${g.correct?'good':'bad'}">${g.correct?'正解':'ハズレ'}</span>`).join('<br>')
+   :'まだ回答していません。';
+}
 
-/* NEON FREEZE HUD bridge */
-const _oldUpdate = update;
-update = function(){
-  _oldUpdate();
-  const credit = Math.max(0, state.payout - state.games*3);
-  document.getElementById('credit').textContent = credit;
+function buildGuessButtons(){
+ el('guessGrid').innerHTML='';
+ for(let s=1;s<=6;s++){
+   const b=document.createElement('button');
+   b.textContent='設定 '+s;
+   b.onclick=()=>guess(s);
+   el('guessGrid').appendChild(b);
+ }
+}
+function guess(s){
+ if(busy)return;
+ const correct=s===state.setting;
+ state.guesses.push({value:s,correct,time:Date.now()});
+ update();
+ if(correct){
+   fanfare();
+   saveSession();
+   showToast(
+     '🎉 設定カンパ成功！',
+     `正解は設定${state.setting}。${state.games}Gで看破しました。<br>RED BIG ${state.a} / BLUE BIG ${state.b} / REG ${state.r}<br>CREDIT ${state.credit}枚`,
+     true
+   );
+ }else{
+   beepMiss();
+   showToast('❌ ハズレ',`設定${s}ではありません。<br>前回までの回答は残したまま、続けて看破できます。`,false);
+ }
+}
+function showToast(title,text,correct){
+ el('toastTitle').textContent=title;
+ el('toastText').innerHTML=text;
+ const a=el('toastActions');a.innerHTML='';
+ if(correct){
+   const yes=document.createElement('button');
+   yes.textContent='リセットして新しい台';
+   yes.onclick=()=>{el('toast').classList.remove('show');newMachine()};
+   const no=document.createElement('button');
+   no.textContent='この台を続ける';
+   no.className='no';
+   no.onclick=()=>el('toast').classList.remove('show');
+   a.append(yes,no);
+ }else{
+   const ok=document.createElement('button');
+   ok.textContent='続ける';
+   ok.onclick=()=>el('toast').classList.remove('show');
+   a.append(ok);
+ }
+ el('toast').classList.add('show');
+}
+
+function saveSession(){
+ const key='kanpa_history_v5';
+ const h=JSON.parse(localStorage.getItem(key)||'[]');
+ h.unshift({t:Date.now(),s:state.setting,g:state.games,a:state.a,b:state.b,r:state.r,q:state.guesses.length,credit:state.credit});
+ localStorage.setItem(key,JSON.stringify(h.slice(0,50)));
+ renderHistory();
+}
+function renderHistory(){
+ const h=JSON.parse(localStorage.getItem('kanpa_history_v5')||'[]');
+ el('histBody').innerHTML=h.length
+ ?h.map(x=>`<tr><td>${new Date(x.t).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</td><td>${x.s}</td><td>${x.g}</td><td>${x.a}</td><td>${x.b}</td><td>${x.r}</td><td>${x.q}</td></tr>`).join('')
+ :'<tr><td colspan="7">履歴なし</td></tr>';
+}
+
+function ac(){
+ if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+ return audioCtx;
+}
+function tone(f,d,v=.05,delay=0){
+ const c=ac(),o=c.createOscillator(),g=c.createGain();
+ o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(c.destination);
+ const t=c.currentTime+delay;o.start(t);o.stop(t+d);
+}
+function fanfare(){[523,659,784,1047,1319].forEach((f,i)=>tone(f,.18,.08,i*.12))}
+function beepMiss(){tone(160,.18,.07);tone(120,.28,.06,.15)}
+function beepReg(){tone(440,.08,.04);tone(660,.10,.04,.09)}
+function beepBonus(){tone(660,.08,.05);tone(880,.08,.05,.08);tone(1320,.12,.05,.16)}
+function beepReach(){tone(740,.06,.04);tone(980,.08,.045,.08);tone(1240,.10,.05,.17)}
+function beepSmall(){tone(520,.06,.03);tone(700,.06,.03,.07)}
+
+el('startBtn').onclick=play;
+el('clearHist').onclick=()=>{
+ if(confirm('設定履歴をすべて消しますか？')){
+   localStorage.removeItem('kanpa_history_v5');
+   renderHistory();
+ }
 };
-const _oldPlay = play;
-play = function(){
-  document.getElementById('lastWin').textContent='0';
-  const p0=state.payout;
-  _oldPlay();
-  setTimeout(()=>{
-    document.getElementById('lastWin').textContent=Math.max(0,state.payout-p0);
-    document.getElementById('credit').textContent=Math.max(0,state.payout-state.games*3);
-  },1600);
-};
-document.getElementById('startBtn').onclick=play;
+
+buildStrips();
+buildReelTable();
+buildReachList();
+buildGuessButtons();
+initProbTable();
+renderHistory();
+newMachine();
+
 </script>
 </body>
 </html>
