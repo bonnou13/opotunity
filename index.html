@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#020711">
+<title>NEON FREEZE - 設定看破 SLOT</title>
+<style>
+:root{
+ --bg:#020711; --panel:#071526; --panel2:#0b2036; --cyan:#39d7ff; --blue:#248cff;
+ --pink:#ff48ef; --gold:#ffca32; --red:#ff3b45; --green:#46e39b; --txt:#eef9ff;
+ --muted:#8db1ca; --edge:#1b8dd3;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#01050b;color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{min-height:100vh;background:
+ radial-gradient(circle at 50% -10%,#123a74 0,#06172c 31%,#01050b 69%),
+ linear-gradient(#01050b,#020711);}
+.app{width:min(100%,760px);margin:auto;padding:10px 9px 36px}
+.logo{position:relative;text-align:center;margin:3px 0 10px;padding:13px 8px 11px;border:1px solid #1bb7ff55;border-radius:15px;
+ background:linear-gradient(180deg,#0b2e5caa,#06142aaa 66%,#040b15);
+ box-shadow:0 0 30px #138cff2d,inset 0 0 32px #189bff18;overflow:hidden}
+.logo:before{content:"";position:absolute;inset:-70% -15%;background:linear-gradient(105deg,transparent 42%,#fff4 48%,transparent 54%);transform:rotate(-9deg)}
+.logo h1{position:relative;margin:0;font-size:clamp(28px,9vw,55px);font-style:italic;letter-spacing:.02em;line-height:1;
+ color:#eafbff;-webkit-text-stroke:1px #52e3ff;text-shadow:0 0 5px #fff,0 0 11px #00b8ff,0 0 23px #263eff,4px 3px 0 #7533cc}
+.logo h1 em{font-style:normal;color:#ffddfb;-webkit-text-stroke:1px #ff57e8;text-shadow:0 0 10px #ff3be5}
+.logo .sub{position:relative;margin-top:7px;font-weight:800;font-size:11px;letter-spacing:.24em;color:#a9dfff}
+
+.machine-shell{border:2px solid #238bd1;border-radius:22px;padding:9px;background:linear-gradient(145deg,#17334a,#060c15 24%,#121c29 59%,#060b12);
+ box-shadow:0 0 0 3px #07111b,0 0 26px #238cff55,inset 0 0 20px #51c8ff1f}
+.toprow{display:grid;grid-template-columns:82px 1fr 95px;gap:7px;align-items:stretch}
+.meter,.settingbox{border:1px solid #208ad0;border-radius:10px;background:linear-gradient(#09213a,#020914);box-shadow:inset 0 0 13px #168cff26;padding:6px}
+.meter div{display:flex;justify-content:space-between;align-items:end;padding:4px 1px;border-bottom:1px solid #24516e}
+.meter div:last-child{border-bottom:0}
+.meter small,.settingbox small{font-size:9px;color:#a4cbe2;font-weight:900}
+.meter b{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;color:#ffbf29;text-shadow:0 0 7px #ff9900}
+.settingbox{text-align:center;display:flex;flex-direction:column;justify-content:center}
+.settingbox b{font-size:28px;color:#fff}
+.settingbox span{font-size:9px;color:#ff6c7c;line-height:1.5}
+
+.screen{padding:8px;border:2px solid #101820;border-radius:13px;background:#03070c;box-shadow:0 0 0 3px #8ba0ae22,inset 0 0 14px #000}
+.reel-window{position:relative;height:270px;overflow:hidden;border:2px solid #5e6e7a;border-radius:8px;background:#f3f3ef;
+ box-shadow:inset 0 0 25px #0009,0 0 18px #3ccfff28}
+.reels{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;height:100%}
+.reel{position:relative;overflow:hidden;background:linear-gradient(90deg,#e9e9e5,#fff 25%,#f2f2ee 65%,#d8d8d4);border-right:1px solid #aaa}
+.strip{position:absolute;left:0;right:0;top:0;will-change:transform}
+.symbol{height:90px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #c7c7c3}
+.payline{position:absolute;left:0;right:0;top:50%;height:2px;background:#ff303e;box-shadow:0 0 8px #ff1734;z-index:7}
+.payline:before,.payline:after{content:"";position:absolute;top:-7px;border-top:8px solid transparent;border-bottom:8px solid transparent}
+.payline:before{left:0;border-left:12px solid #ff3043} .payline:after{right:0;border-right:12px solid #ff3043}
+.shade{position:absolute;inset:0;z-index:5;pointer-events:none;box-shadow:inset 0 60px 40px -25px #0007,inset 0 -60px 40px -25px #0007}
+
+.tile{width:79%;height:63%;display:flex;align-items:center;justify-content:center;border-radius:9px;line-height:1;font-weight:1000;
+ box-shadow:inset 0 0 0 3px #1112,0 2px 3px #0004}
+.seven-red,.seven-blue{font:italic 900 52px/1 Impact,Haettenschweiler,"Arial Black",sans-serif;transform:skew(-10deg);background:#fff}
+.seven-red{color:#ef2e31;text-shadow:2px 2px 0 #ffc123,-2px -1px #fff,0 0 4px #ff2020}
+.seven-blue{color:#1686f5;text-shadow:2px 2px 0 #55eaff,-2px -1px #fff,0 0 4px #147dff}
+.bar-tile{background:linear-gradient(#30343a,#050609 48%,#25282d);color:white;border:3px solid #bfc7cf;font-size:19px;letter-spacing:.05em}
+.bar-tile span{padding:3px 7px;border-top:2px solid #fff;border-bottom:2px solid #fff}
+.bell-tile{font-size:37px;background:radial-gradient(circle at 50% 25%,#fff8b8,#ffcc23 55%,#ac7500);color:#6b4500}
+.replay-tile{width:64%;height:59%;border-radius:50%;font-size:11px;color:#004a9c;background:radial-gradient(circle,#e8fbff 10%,#67cfff 38%,#0873d5 75%);border:3px solid #0d63ad}
+.replay-tile b{background:#e9fbffcc;border-radius:12px;padding:3px}
+.cherry-tile,.melon-tile{font-size:37px;background:transparent;box-shadow:none}
+
+.message{margin:8px 0 4px;min-height:44px;display:flex;align-items:center;justify-content:center;text-align:center;padding:7px 9px;
+ border:1px solid #1f7db7;border-radius:9px;background:linear-gradient(#0b1e2f,#050b12);font-weight:1000;letter-spacing:.03em;
+ text-shadow:0 0 7px #2ca8ff}
+.gold{color:#ffd33d} .good{color:#5ff0af} .bad{color:#ff6878}
+
+.console{margin-top:8px;padding:9px;border-radius:15px;border:1px solid #44576a;background:linear-gradient(#1a2632,#090e14);box-shadow:inset 0 0 14px #000}
+.console-row{display:grid;grid-template-columns:105px 1fr;gap:9px;align-items:center}
+.start{height:68px;border-radius:50%;border:4px solid #ffb224;background:radial-gradient(circle at 45% 35%,#ff8b76,#e71e34 43%,#7d0513 73%);
+ color:white;font-size:18px;font-weight:1000;box-shadow:0 0 0 4px #3d1518,0 0 18px #ff304b88,inset 0 0 13px #fff6;touch-action:manipulation}
+.start:active{transform:translateY(2px)} .start:disabled{filter:grayscale(.6);opacity:.55}
+.stop-lights{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.stop-lights i{display:block;width:55px;height:55px;max-width:100%;margin:auto;border-radius:50%;border:4px solid #a2adba;
+ background:radial-gradient(circle at 40% 32%,#fff,#d7e0e9 38%,#6f7a88 76%);box-shadow:0 0 0 3px #111,0 0 12px #90d8ff44}
+
+.hud2{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin:9px 0}
+.hud2>div{padding:6px 3px;text-align:center;border:1px solid #17648d;border-radius:8px;background:#061525}
+.hud2 small{display:block;color:#87b9d5;font-size:8px} .hud2 b{font-size:13px;color:#ecfaff}
+
+.panel{margin-top:10px;padding:10px;border:1px solid #176b9d;border-radius:13px;background:linear-gradient(180deg,#071a2d,#040c15);box-shadow:inset 0 0 18px #147ecc10}
+.panel h2{margin:0 0 8px;font-size:14px;letter-spacing:.04em;color:#e9fbff}
+.guess-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.guess-grid button{padding:11px 2px;border-radius:8px;border:1px solid #248ac2;background:#0a2a45;color:white;font-weight:1000;font-size:14px}
+.guess-grid button:active{background:#145b8f}
+.guess-history,.tiny{font-size:10px;color:#9ab6c8;line-height:1.55;margin-top:7px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px} .stat{padding:7px 4px;text-align:center;border:1px solid #174f72;border-radius:8px;background:#05121f}
+.stat small{display:block;font-size:8px;color:#8cabc0} .stat b{font-size:12px}
+.table-wrap,.history-box,.reel-preview{overflow:auto}
+.prob-table,.hist-table,.reel-table{border-collapse:collapse;width:100%;font-size:9px;min-width:520px}
+th,td{padding:6px 4px;text-align:center;border-bottom:1px solid #14334a;white-space:nowrap} th{color:#79d8ff;background:#071827;position:sticky;top:0}
+.reel-preview{max-height:410px;border:1px solid #174e71;border-radius:9px}
+.reel-table td{background:#eef0ed;color:#111} .reel-table .num{background:#09213a;color:#ffd84d;font-weight:900}
+.mini-sym .tile{width:56px;height:42px;margin:auto;box-shadow:none} .mini-sym .seven-red,.mini-sym .seven-blue{font-size:31px}
+.mini-sym .bar-tile{font-size:12px} .mini-sym .bell-tile{font-size:26px} .mini-sym .replay-tile{font-size:8px;width:44px;height:36px}
+.mini-sym .cherry-tile,.mini-sym .melon-tile{font-size:24px}
+.reach-list{font-size:10px;line-height:1.7} .reach-chip{display:inline-block;margin:2px;padding:4px 6px;border:1px solid #216f9b;border-radius:7px;background:#092037}
+.secondary{width:100%;margin-top:8px;padding:10px;border:1px solid #2a6488;border-radius:8px;background:#0d2437;color:#dff7ff;font-weight:800}
+.toast{position:fixed;inset:0;background:#000d;display:none;align-items:center;justify-content:center;z-index:99;padding:18px} .toast.show{display:flex}
+.toast-card{width:min(92vw,430px);padding:22px;border-radius:19px;text-align:center;background:#061424;border:2px solid #27c2ff;box-shadow:0 0 35px #189fff88}
+.toast-card .big{font-size:30px;font-weight:1000;color:#fff;text-shadow:0 0 12px #1faaff}
+.toast-card .actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:13px} .toast-card button{padding:12px;border-radius:9px;border:0;font-weight:900}
+.toast-card .actions button:first-child{background:#28bfff;color:#00111f} .toast-card .no{background:#24384a!important;color:#fff!important}
+
+.bonus-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:8px}
+.bonus-strip div{text-align:center;padding:7px 2px;border:1px solid #155a81;background:#061323;border-radius:7px;font-size:8px}
+.bonus-strip b{display:block;font-size:10px;color:#ffd23b;margin-top:4px}
+
+@media(max-width:460px){
+ .app{padding-left:6px;padding-right:6px} .toprow{grid-template-columns:72px 1fr 80px;gap:4px}
+ .meter b{font-size:17px} .settingbox b{font-size:24px} .reel-window{height:252px} .symbol{height:84px}
+ .seven-red,.seven-blue{font-size:46px} .console-row{grid-template-columns:91px 1fr} .start{height:62px;font-size:15px}
+ .stop-lights i{width:48px;height:48px} .hud2{gap:3px} .hud2 small{font-size:7px} .hud2 b{font-size:11px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+ <div class="logo">
+  <h1>NEON <em>FREEZE</em></h1>
+  <div class="sub">SETTEI KANPA SLOT</div>
+ </div>
+
+ <div class="machine-shell">
+  <div class="toprow">
+   <div class="meter">
+    <div><small>CREDIT</small><b id="credit">0</b></div>
+    <div><small>BET</small><b>3</b></div>
+    <div><small>WIN</small><b id="lastWin">0</b></div>
+   </div>
+
+   <div class="screen">
+    <div class="reel-window">
+     <div class="payline"></div>
+     <div class="reels">
+      <div class="reel"><div class="strip" id="r0"></div></div>
+      <div class="reel"><div class="strip" id="r1"></div></div>
+      <div class="reel"><div class="strip" id="r2"></div></div>
+     </div>
+     <div class="shade"></div>
+    </div>
+   </div>
+
+   <div class="settingbox">
+    <small>SETTING</small><b>?</b>
+    <span>RED BIG<br>BLUE BIG<br>REG</span>
+   </div>
+  </div>
+
+  <div class="message" id="message">STARTで1ゲーム</div>
+
+  <div class="console">
+   <div class="console-row">
+    <button class="start" id="startBtn">MAX<br>BET</button>
+    <div class="stop-lights"><i></i><i></i><i></i></div>
+   </div>
+  </div>
+
+  <div class="hud2">
+   <div><small>GAMES</small><b id="games">0</b></div>
+   <div><small>RED BIG</small><b id="bigA">0</b></div>
+   <div><small>BLUE BIG</small><b id="bigB">0</b></div>
+   <div><small>REG</small><b id="reg">0</b></div>
+   <div><small>投入</small><b id="coins">0</b></div>
+   <div><small>獲得</small><b id="payout">0</b></div>
+  </div>
+
+  <div class="bonus-strip">
+   <div>🔴 777<b>BIG 350枚</b></div><div>🔵 777<b>BIG 350枚</b></div><div>BAR BAR BAR<b>REG 100枚</b></div>
+   <div>🔔🔔🔔<b>小役</b></div><div>🔵🔵🔵<b>REPLAY</b></div>
+  </div>
+ </div>
+
+ <div class="panel">
+  <h2>設定を回答</h2>
+  <div class="guess-grid" id="guessGrid"></div>
+  <div class="guess-history" id="guessHistory">まだ回答していません。</div>
+ </div>
+
+ <div class="panel">
+  <h2>現在の観測値</h2>
+  <div class="stats-grid">
+   <div class="stat"><small>BIG合算</small><b id="bigRate">-</b></div>
+   <div class="stat"><small>REG</small><b id="regRate">-</b></div>
+   <div class="stat"><small>ボーナス合算</small><b id="totalRate">-</b></div>
+   <div class="stat"><small>回答回数</small><b id="guessCount">0</b></div>
+  </div>
+  <div class="tiny">リーチ目が出ても種類は告知しません。次ゲームで赤7・青7・BARのどれが揃うかを見極めます。</div>
+ </div>
+
+ <div class="panel">
+  <h2>リール配列（固定21コマ）</h2>
+  <div class="tiny">上から21→1。実際のゲームもこの固定配列から停止位置を選びます。</div>
+  <div class="reel-preview"><table class="reel-table"><thead><tr><th>番号</th><th>左</th><th>中</th><th>右</th></tr></thead><tbody id="reelBody"></tbody></table></div>
+ </div>
+
+ <div class="panel"><h2>リーチ目</h2><div class="reach-list" id="reachList"></div></div>
+ <div class="panel"><h2>設定別ボーナス確率</h2><div class="table-wrap"><table class="prob-table"><thead><tr><th>設定</th><th>RED BIG</th><th>BLUE BIG</th><th>BIG合算</th><th>REG</th><th>全ボーナス</th></tr></thead><tbody id="probBody"></tbody></table></div></div>
+
+ <div class="panel">
+  <h2>これまでの設定看破履歴</h2>
+  <div class="history-box"><table class="hist-table"><thead><tr><th>日時</th><th>設定</th><th>G</th><th>赤BIG</th><th>青BIG</th><th>REG</th><th>回答</th></tr></thead><tbody id="histBody"></tbody></table></div>
+  <button class="secondary" id="clearHist">履歴を消去</button>
+ </div>
+</div>
+
+<div class="toast" id="toast"><div class="toast-card"><div class="big" id="toastTitle"></div><div id="toastText"></div><div class="actions" id="toastActions"></div></div></div>
+
+<script>
+
+const S={R7:'R7',B7:'B7',BAR:'BAR',BELL:'BELL',REP:'REP',CH:'CH',MEL:'MEL'};
+// 固定21コマ。配列順がそのまま一本のリールの並び。
+const REELS=[
+ [S.R7,S.REP,S.MEL,S.REP,S.BELL,S.REP,S.R7,S.CH,S.BELL,S.REP,S.CH,S.BAR,S.BELL,S.REP,S.MEL,S.REP,S.BELL,S.B7,S.CH,S.REP,S.BELL],
+ [S.MEL,S.REP,S.MEL,S.BELL,S.B7,S.R7,S.CH,S.BELL,S.REP,S.MEL,S.BELL,S.BELL,S.MEL,S.CH,S.REP,S.BELL,S.BAR,S.BAR,S.BAR,S.REP,S.BELL],
+ [S.BELL,S.REP,S.MEL,S.MEL,S.BELL,S.CH,S.R7,S.REP,S.BELL,S.MEL,S.MEL,S.BELL,S.BELL,S.REP,S.CH,S.BAR,S.MEL,S.B7,S.REP,S.CH,S.BELL]
+];
+const PROBS={1:{big:1/273.1,r:1/439.8},2:{big:1/270.8,r:1/399.6},3:{big:1/266.4,r:1/331.0},4:{big:1/254.0,r:1/315.1},5:{big:1/240.1,r:1/255.0},6:{big:1/229.1,r:1/229.1}};
+Object.values(PROBS).forEach(p=>{p.a=p.big/2;p.b=p.big/2});
+const REACH=[
+ [S.BAR,S.R7,S.BAR],
+ [S.R7,S.BAR,S.R7],
+ [S.B7,S.BAR,S.B7],
+ [S.BAR,S.B7,S.BAR],
+ [S.R7,S.B7,S.BAR],
+ [S.B7,S.R7,S.BAR]
+];
+const strips=[0,1,2].map(i=>document.getElementById('r'+i)); const el=id=>document.getElementById(id); let state={}; let busy=false; let audioCtx=null;
+function symHTML(s){
+ if(s===S.R7)return '<div class="tile seven-red">7</div>';
+ if(s===S.B7)return '<div class="tile seven-blue">7</div>';
+ if(s===S.BAR)return '<div class="tile bar-tile"><span>BAR</span></div>';
+ if(s===S.BELL)return '<div class="tile bell-tile">🔔</div>';
+ if(s===S.REP)return '<div class="tile replay-tile"><b>REPLAY</b></div>';
+ if(s===S.CH)return '<div class="tile cherry-tile">🍒</div>';
+ return '<div class="tile melon-tile">🍉</div>';
+}
+function symName(s){return {[S.R7]:'赤7',[S.B7]:'青7',[S.BAR]:'BAR',[S.BELL]:'ベル',[S.REP]:'REPLAY',[S.CH]:'チェリー',[S.MEL]:'スイカ'}[s]}
+function buildStrips(){REELS.forEach((arr,ri)=>{const trip=[...arr,...arr,...arr];strips[ri].innerHTML=trip.map(s=>`<div class="symbol">${symHTML(s)}</div>`).join('')})}
+function buildReelTable(){let html='';for(let row=0;row<21;row++){html+=`<tr><td class="num">${21-row}</td>${[0,1,2].map(c=>`<td class="mini-sym">${symHTML(REELS[c][row])}</td>`).join('')}</tr>`}el('reelBody').innerHTML=html}
+function buildReachList(){el('reachList').innerHTML=REACH.map(x=>`<span class="reach-chip">${x.map(symName).join(' - ')}</span>`).join('')}
+function rate(n,g){return n?`1/${Math.round(g/n)}`:'-'}; function combined(...ps){return 1/ps.reduce((a,x)=>a+x,0)}
+function initProbTable(){el('probBody').innerHTML=Object.entries(PROBS).map(([s,p])=>`<tr><td>${s}</td><td>1/${Math.round(1/p.a)}</td><td>1/${Math.round(1/p.b)}</td><td>1/${Math.round(combined(p.a,p.b))}</td><td>1/${Math.round(1/p.r)}</td><td>1/${Math.round(combined(p.a,p.b,p.r))}</td></tr>`).join('')}
+function newMachine(){state={setting:1+Math.floor(Math.random()*6),games:0,a:0,b:0,r:0,payout:0,pendingBonus:null,guesses:[],positions:[0,0,0],startedAt:Date.now()};busy=false;el('message').textContent='STARTで1ゲーム';el('startBtn').disabled=false;update();resetReelVisuals()}
+function resetReelVisuals(){REELS.forEach((arr,i)=>{state.positions[i]=Math.floor(Math.random()*arr.length);setReel(i,state.positions[i],false)})}
+function reelH(){return window.innerWidth<=430?90:100}
+function setReel(i,pos,animate=true){const h=reelH(),base=REELS[i].length,targetIndex=base+pos-1,y=-(targetIndex*h);strips[i].style.transition=animate?`transform ${0.85+i*0.28}s cubic-bezier(.12,.75,.18,1)`:'none';strips[i].style.transform=`translateY(${y}px)`}
+function idxOf(reel,sym,nth=0){const hits=[];REELS[reel].forEach((s,i)=>{if(s===sym)hits.push(i)});return hits[Math.min(nth,hits.length-1)]}
+function stopsForTriple(t){return t.map((s,i)=>idxOf(i,s,0))}
+function lineSymbols(stops){return stops.map((p,i)=>REELS[i][p])}
+function isReach(line){return REACH.some(p=>p.every((s,i)=>s===line[i]))}
+function isTriple(line,s){return line[0]===s&&line[1]===s&&line[2]===s}
+function pickOutcome(){if(state.pendingBonus)return state.pendingBonus;const p=PROBS[state.setting],r=Math.random();if(r<p.a)return'A';if(r<p.a+p.b)return'B';if(r<p.a+p.b+p.r)return'R';const q=Math.random();if(q<1/7.2)return'BEL';if(q<1/7.2+1/7.3)return'REP';if(q<1/7.2+1/7.3+1/32)return'CH';if(q<1/7.2+1/7.3+1/32+1/90)return'MEL';return'N'}
+function stopForOutcome(type){
+ if(state.pendingBonus){
+   if(type==='A')return stopsForTriple([S.R7,S.R7,S.R7]);
+   if(type==='B')return stopsForTriple([S.B7,S.B7,S.B7]);
+   return stopsForTriple([S.BAR,S.BAR,S.BAR]);
+ }
+ if(type==='A'||type==='B'||type==='R')return stopsForTriple(REACH[Math.floor(Math.random()*REACH.length)]);
+ if(type==='BEL')return stopsForTriple([S.BELL,S.BELL,S.BELL]);
+ if(type==='REP')return stopsForTriple([S.REP,S.REP,S.REP]);
+ if(type==='MEL')return stopsForTriple([S.MEL,S.MEL,S.MEL]);
+ if(type==='CH'){const left=idxOf(0,S.CH,Math.floor(Math.random()*3));return [left,Math.floor(Math.random()*21),Math.floor(Math.random()*21)]}
+ let st;do{st=REELS.map(a=>Math.floor(Math.random()*a.length))}while(classifyLine(st).kind!=='MISS');return st;
+}
+function classifyLine(stops){const line=lineSymbols(stops);if(isTriple(line,S.R7))return{kind:'A',label:'RED BIG'};if(isTriple(line,S.B7))return{kind:'B',label:'BLUE BIG'};if(isTriple(line,S.BAR))return{kind:'R',label:'REG'};if(isReach(line))return{kind:'REACH',label:'リーチ目'};if(isTriple(line,S.BELL))return{kind:'BELL',label:'ベル揃い'};if(isTriple(line,S.REP))return{kind:'REP',label:'REPLAY'};if(isTriple(line,S.MEL))return{kind:'MEL',label:'スイカ揃い'};if(line[0]===S.CH)return{kind:'CH',label:'チェリー'};return{kind:'MISS',label:'ハズレ'}}
+function play(){
+ if(busy)return;
+ busy=true;el('startBtn').disabled=true;state.games++;
+ const resolvingBonus=!!state.pendingBonus;
+ const selected=pickOutcome();
+ const stops=stopForOutcome(selected);
+ el('message').textContent='リール回転中…';
+ REELS.forEach((arr,i)=>{const h=reelH(),start=Math.max(0,stops[i]-8);strips[i].style.transition='none';strips[i].style.transform=`translateY(${-((arr.length+start-1)*h)}px)`;void strips[i].offsetHeight;setTimeout(()=>setReel(i,stops[i],true),30)});
+ setTimeout(()=>{
+   state.positions=stops;const res=classifyLine(stops);
+   if(resolvingBonus){
+     if(selected==='A'){state.a++;state.payout+=350;el('message').innerHTML='<span class="gold">🔴 RED BIG　+350枚</span>';beepBonus()}
+     else if(selected==='B'){state.b++;state.payout+=350;el('message').innerHTML='<span class="gold">🔵 BLUE BIG　+350枚</span>';beepBonus()}
+     else {state.r++;state.payout+=100;el('message').innerHTML='<span class="good">BAR REG　+100枚</span>';beepReg()}
+     state.pendingBonus=null;el('startBtn').textContent='🎰 START / 次ゲーム';
+   }else if(selected==='A'||selected==='B'||selected==='R'){
+     state.pendingBonus=selected;
+     el('message').innerHTML='<span class="gold">✨ リーチ目！ ✨</span>';
+     el('startBtn').textContent='🎰 ボーナスを狙う';
+     beepReach();
+   }else if(res.kind==='BELL'){el('message').innerHTML='<span class="good">🔔 ベル揃い</span>';beepSmall()}
+   else if(res.kind==='REP'){el('message').innerHTML='<span class="good">🔵 REPLAY</span>';beepSmall()}
+   else if(res.kind==='MEL'){el('message').innerHTML='<span class="good">🍉 スイカ揃い</span>';beepSmall()}
+   else if(res.kind==='CH'){el('message').innerHTML='<span class="good">🍒 チェリー</span>';beepSmall()}
+   else{el('message').textContent='ハズレ'}
+   busy=false;el('startBtn').disabled=false;update()
+ },1500)
+}
+function update(){el('games').textContent=state.games;el('bigA').textContent=state.a;el('bigB').textContent=state.b;el('reg').textContent=state.r;el('coins').textContent=state.games*3;el('payout').textContent=state.payout;el('bigRate').textContent=rate(state.a+state.b,state.games);el('regRate').textContent=rate(state.r,state.games);el('totalRate').textContent=rate(state.a+state.b+state.r,state.games);el('guessCount').textContent=state.guesses.length;el('guessHistory').innerHTML=state.guesses.length?state.guesses.map((g,i)=>`${i+1}回目：設定${g.value} → <span class="${g.correct?'good':'bad'}">${g.correct?'正解':'ハズレ'}</span>`).join('<br>'):'まだ回答していません。'}
+function buildGuessButtons(){el('guessGrid').innerHTML='';for(let s=1;s<=6;s++){const b=document.createElement('button');b.textContent='設定 '+s;b.onclick=()=>guess(s);el('guessGrid').appendChild(b)}}
+function guess(s){if(busy)return;const correct=s===state.setting;state.guesses.push({value:s,correct,time:Date.now()});update();if(correct){fanfare();saveSession();showToast('🎉 設定カンパ成功！',`正解は設定${state.setting}。${state.games}Gで看破しました。<br>RED BIG ${state.a} / BLUE BIG ${state.b} / REG ${state.r}`,true)}else{beepMiss();showToast('❌ ハズレ',`設定${s}ではありません。<br>前回までの回答は残したまま、続けて看破できます。`,false)}}
+function showToast(title,text,correct){el('toastTitle').textContent=title;el('toastText').innerHTML=text;const a=el('toastActions');a.innerHTML='';if(correct){const yes=document.createElement('button');yes.textContent='リセットして新しい台';yes.onclick=()=>{el('toast').classList.remove('show');newMachine()};const no=document.createElement('button');no.textContent='この台を続ける';no.className='no';no.onclick=()=>el('toast').classList.remove('show');a.append(yes,no)}else{const ok=document.createElement('button');ok.textContent='続ける';ok.onclick=()=>el('toast').classList.remove('show');a.append(ok)}el('toast').classList.add('show')}
+function saveSession(){const key='kanpa_history_v4';const h=JSON.parse(localStorage.getItem(key)||'[]');h.unshift({t:Date.now(),s:state.setting,g:state.games,a:state.a,b:state.b,r:state.r,q:state.guesses.length});localStorage.setItem(key,JSON.stringify(h.slice(0,50)));renderHistory()}
+function renderHistory(){const h=JSON.parse(localStorage.getItem('kanpa_history_v4')||'[]');el('histBody').innerHTML=h.length?h.map(x=>`<tr><td>${new Date(x.t).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</td><td>${x.s}</td><td>${x.g}</td><td>${x.a}</td><td>${x.b}</td><td>${x.r}</td><td>${x.q}</td></tr>`).join(''):'<tr><td colspan="7" class="muted">履歴なし</td></tr>'}
+function ac(){if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();return audioCtx}function tone(f,d,v=.05,delay=0){const c=ac(),o=c.createOscillator(),g=c.createGain();o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(c.destination);const t=c.currentTime+delay;o.start(t);o.stop(t+d)}
+function fanfare(){[523,659,784,1047,1319].forEach((f,i)=>tone(f,.18,.08,i*.12))}function beepMiss(){tone(160,.18,.07);tone(120,.28,.06,.15)}function beepReg(){tone(440,.08,.04);tone(660,.10,.04,.09)}function beepBonus(){tone(660,.08,.05);tone(880,.08,.05,.08);tone(1320,.12,.05,.16)}function beepReach(){tone(740,.06,.04);tone(980,.08,.045,.08);tone(1240,.10,.05,.17)}function beepSmall(){tone(520,.06,.03);tone(700,.06,.03,.07)}
+el('startBtn').onclick=play;el('clearHist').onclick=()=>{if(confirm('設定履歴をすべて消しますか？')){localStorage.removeItem('kanpa_history_v4');renderHistory()}};
+buildStrips();buildReelTable();buildReachList();buildGuessButtons();initProbTable();renderHistory();newMachine();
+
+
+/* NEON FREEZE HUD bridge */
+const _oldUpdate = update;
+update = function(){
+  _oldUpdate();
+  const credit = Math.max(0, state.payout - state.games*3);
+  document.getElementById('credit').textContent = credit;
+};
+const _oldPlay = play;
+play = function(){
+  document.getElementById('lastWin').textContent='0';
+  const p0=state.payout;
+  _oldPlay();
+  setTimeout(()=>{
+    document.getElementById('lastWin').textContent=Math.max(0,state.payout-p0);
+    document.getElementById('credit').textContent=Math.max(0,state.payout-state.games*3);
+  },1600);
+};
+document.getElementById('startBtn').onclick=play;
+</script>
+</body>
+</html>
